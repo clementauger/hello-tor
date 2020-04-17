@@ -1,0 +1,11 @@
+[Unit]
+Description=hellotor service.
+
+[Service]
+Type=simple
+ExecStart=/path/to/hellotor
+User=User
+WorkingDirectory=/path/to/hellotor/config/and/keys
+
+[Install]
+WantedBy=multi-user.target
