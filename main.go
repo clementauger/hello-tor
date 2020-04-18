@@ -8,6 +8,7 @@ import (
 	"encoding/pem"
 	"flag"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -27,6 +28,26 @@ func main() {
 	var pkpath string
 	flag.StringVar(&pkpath, "pk", "onion.pk", "ed25519 pem encoded privatekey file path")
 	flag.Parse()
+
+	var tpl *template.Template
+	tpl, err := template.New("").Parse(`welcome to the tor network!`)
+	if _, e := os.Stat("index.tpl"); os.IsNotExist(e) == false {
+		tpl, err = template.ParseFiles("index.tpl")
+	}
+	if err != nil {
+		log.Fatalf("template parsing error:%v", err)
+	}
+
+	helloTor := func(w http.ResponseWriter, r *http.Request) {
+		data := map[string]interface{}{
+			"Request": r,
+			"Now":     time.Now(),
+		}
+		err := tpl.Execute(w, data)
+		if err != nil {
+			log.Printf("failed to serve hello-tor handler: %v\n", err)
+		}
+	}
 
 	h := handlers.LoggingHandler(os.Stdout, http.HandlerFunc(helloTor))
 
@@ -56,10 +77,6 @@ func main() {
 		log.Println(err)
 	case <-sc:
 	}
-}
-
-func helloTor(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("welcome to the tor network!\n"))
 }
 
 func getOrCreatePK(fpath string) (ed25519.PrivateKey, error) {
